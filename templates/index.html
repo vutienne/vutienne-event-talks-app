@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Tracker</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="bq-logo-icon">
+                    <i class="fa-solid aspiration-logo fa-database"></i>
+                    <div class="bq-dot"></div>
+                </div>
+                <div class="header-titles">
+                    <h1>BigQuery</h1>
+                    <span class="sub-title">Release Notes Tracker</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-primary" title="Refresh Release Notes">
+                    <i id="refresh-icon" class="fa-solid fa-arrows-rotate"></i>
+                    <span class="btn-text">Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-bar card">
+            <div class="stat-item">
+                <span class="stat-label">Feed Status</span>
+                <span id="feed-status" class="stat-value text-success">
+                    <i class="fa-solid fa-circle-check"></i> Connected
+                </span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-label">Total Updates</span>
+                <span id="total-updates-count" class="stat-value">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-label">Latest Release</span>
+                <span id="latest-release-date" class="stat-value">-</span>
+            </div>
+        </section>
+
+        <!-- Search and Filter Controls -->
+        <section class="controls-section">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search keywords, features, fixes...">
+                <button id="clear-search" class="clear-btn" style="display: none;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="filter-pills">
+                <button class="filter-pill active" data-type="all">All Updates</button>
+                <button class="filter-pill" data-type="feature"><span class="pill-dot feature"></span>Feature</button>
+                <button class="filter-pill" data-type="fix"><span class="pill-dot fix"></span>Fix</button>
+                <button class="filter-pill" data-type="issue"><span class="pill-dot issue"></span>Issue</button>
+                <button class="filter-pill" data-type="deprecation"><span class="pill-dot deprecation"></span>Deprecation</button>
+                <button class="filter-pill" data-type="general"><span class="pill-dot general"></span>General</button>
+            </div>
+        </section>
+
+        <!-- Content Area -->
+        <main class="content-area">
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-container" style="display: none;">
+                <div class="spinner-outer">
+                    <div class="spinner-inner"></div>
+                    <i class="fa-solid fa-database spinner-center"></i>
+                </div>
+                <h3>Fetching BigQuery Feed...</h3>
+                <p>Retrieving latest release notes from Google Cloud feeds</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="error-container" style="display: none;">
+                <div class="error-icon-box">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <h3>Failed to Load Feed</h3>
+                <p id="error-message">Could not fetch release notes from the server.</p>
+                <button id="retry-btn" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrows-rotate"></i> Try Again
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-container" style="display: none;">
+                <div class="empty-icon-box">
+                    <i class="fa-regular fa-folder-open"></i>
+                </div>
+                <h3>No Matching Updates Found</h3>
+                <p>Try adjusting your search keywords or category filters.</p>
+                <button id="reset-filters-btn" class="btn btn-secondary">Clear Filters</button>
+            </div>
+
+            <!-- Release Notes List -->
+            <div id="notes-list" class="notes-timeline">
+                <!-- Javascript will inject data here -->
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>BigQuery Release Notes Viewer &copy; 2026. Data sourced from <a href="https://docs.cloud.google.com/feeds/bigquery-release-notes.xml" target="_blank" rel="noopener noreferrer">Google Cloud RSS Feed <i class="fa-solid fa-up-right-from-square"></i></a>.</p>
+        </footer>
+    </div>
+
+    <!-- Premium Tweet Compose Modal -->
+    <div id="tweet-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2><i class="fa-brands fa-x-twitter"></i> Tweet about this Update</h2>
+                <button id="close-modal" class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-instruction">Customize your post before sharing to X (formerly Twitter):</p>
+                
+                <!-- Mock X Post Container (Premium UI) -->
+                <div class="mock-x-post">
+                    <div class="mock-user-info">
+                        <div class="mock-avatar">
+                            <i class="fa-solid fa-user-astronaut"></i>
+                        </div>
+                        <div class="mock-names">
+                            <span class="mock-display-name">Cloud Architect</span>
+                            <span class="mock-username">@cloud_ninja</span>
+                        </div>
+                        <i class="fa-brands fa-x-twitter mock-x-logo"></i>
+                    </div>
+                    
+                    <div class="mock-content">
+                        <textarea id="tweet-textarea" maxlength="280" placeholder="What's happening?"></textarea>
+                    </div>
+                    
+                    <div class="mock-divider"></div>
+                    
+                    <div class="mock-attachment">
+                        <div class="attachment-preview">
+                            <div class="attachment-text">
+                                <span class="attachment-title">BigQuery Release Notes</span>
+                                <span class="attachment-desc" id="attachment-snippet">Read the full official details on Google Cloud docs.</span>
+                                <span class="attachment-source"><i class="fa-solid fa-link"></i> cloud.google.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-controls">
+                    <div class="char-counter-container">
+                        <svg class="progress-ring" width="24" height="24">
+                            <circle class="progress-ring__circle-bg" stroke="#2f3336" stroke-width="2" fill="transparent" r="10" cx="12" cy="12"/>
+                            <circle id="progress-ring-circle" class="progress-ring__circle" stroke="#1d9bf0" stroke-width="2" fill="transparent" r="10" cx="12" cy="12"/>
+                        </svg>
+                        <span id="char-counter">280</span> characters left
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-tweet-btn" class="btn btn-tertiary">Cancel</button>
+                <button id="post-tweet-btn" class="btn btn-tweet">
+                    <i class="fa-brands fa-x-twitter"></i> Post to X
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast-notification" style="display: none;">
+        <i class="fa-solid fa-circle-check toast-icon"></i>
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
